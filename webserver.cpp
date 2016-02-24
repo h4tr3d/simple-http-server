@@ -395,12 +395,19 @@ private:
     {
         //clog << "Headers completed [1], keep-alive: " << http_should_keep_alive(&m_parser) << endl;
 
+#if 0
         static uint8_t streamNotFound[] = "HTTP/1.1 404 Not found\r\n"
                                           "Content-Type: text/html\r\n"
                                           "Connection: close\r\n"
                                           "Content-Length: 44\r\n"
                                           "\r\n"
                                           "<html><body>Stream not found</body></html>\r\n";
+#else
+        static uint8_t streamNotFound[] = "HTTP/1.0 404 Not found\r\n"
+                                          "Content-Type: text/html\r\n"
+                                          "Content-Length: 0\r\n"
+                                          "\r\n";
+#endif
 
         auto &parser = m_http.parser();
 
@@ -436,13 +443,22 @@ private:
 
                 auto fd = open(fname.c_str(), O_RDONLY | O_EXCL);
 
+#if 0
                 //"Transfer-Encoding: chunked\r\n"
-                static uint8_t headers[] = "HTTP/1.1 200 OK\r\n"
-                                           "Content-Type: text/html\r\n"
-                                           "Connection: close\r\n"
-                                           "\r\n";
+                static string headers = "HTTP/1.1 200 OK\r\n"
+                                        "Content-Type: text/html\r\n"
+                                        "Connection: close\r\n"
+                                        "\r\n";
+#else
+                string headers = "HTTP/1.0 200 OK\r\n"
+                                 "Content-Type: text/html\r\n"
+                                 "Content-Length: " +
+                                 std::to_string(st.st_size) +
+                                 "\r\n"
+                                 "\r\n";
+#endif
 
-                send(new PtrBuffer<const uint8_t>(&headers[0], sizeof(headers) - 1));
+                send(new PtrBuffer<const char>(headers.c_str(), headers.size()));
                 send(new FileReader(fd));
                 m_doDestroyAfterWrite = true;
 
@@ -822,13 +838,6 @@ int main(int argc, char **argv)
 
     if (daemon)
     {
-        string name = "/tmp/webserver.log";
-        auto logfd = open(name.c_str(), O_WRONLY|O_CREAT, 0644);
-        if (logfd < 0) {
-            perror("can't open log file");
-            exit(1);
-        }
-
         auto pid = fork();
 
         if (pid > 0)
@@ -838,13 +847,18 @@ int main(int argc, char **argv)
         if (sid < 0)
             exit(1);
 
-        close(STDOUT_FILENO);
-        close(STDERR_FILENO);
+        string name = "/tmp/webserver.log";
+        auto logfd = open(name.c_str(), O_WRONLY|O_CREAT|O_TRUNC, 0644);
+        if (logfd < 0) {
+            perror("can't open log file");
+            exit(1);
+        }
 
-        dup(logfd);
-        dup(logfd);
-
+        dup2(logfd, STDOUT_FILENO);
+        dup2(logfd, STDERR_FILENO);
         close(STDIN_FILENO);
+        if (logfd > 2)
+            close(logfd);
     }
 
     if (setnofile(999999) < 0)
