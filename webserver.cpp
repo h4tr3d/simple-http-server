@@ -826,7 +826,7 @@ int main(int argc, char **argv)
     string directory = "/tmp";
     size_t workers   = 0;
     bool   daemon    = true;
-    string logfile   = "/home/box/final/webserver.log";
+    string logfile   = "/home/box/webserver.log";
 
     int opt;
     while ((opt = getopt(argc, argv, s_opts)) != -1)
