@@ -823,7 +823,7 @@ int main(int argc, char **argv)
     if (daemon)
     {
         string name = "/tmp/webserver.log";
-        auto logfd = open(name.c_str(), O_WRONLY|O_CREAT);
+        auto logfd = open(name.c_str(), O_WRONLY|O_CREAT, 0644);
         if (logfd < 0) {
             perror("can't open log file");
             exit(1);
