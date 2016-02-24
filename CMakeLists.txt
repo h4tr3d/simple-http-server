@@ -13,7 +13,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra")
 # See: http://www.cmake.org/cmake/help/v3.0/module/FindThreads.html
 find_package(Threads REQUIRED)
 find_package(Libev REQUIRED)
-find_package(Magic REQUIRED)
+#find_package(Magic REQUIRED)
 
 include_directories(${MAGIC_INCLUDE_DIR})
 
