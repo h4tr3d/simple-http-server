@@ -17,12 +17,14 @@ find_package(Magic REQUIRED)
 
 include_directories(${MAGIC_INCLUDE_DIR})
 
-add_executable(${PROJECT_NAME} ${SRC_LIST})
-target_link_libraries(${PROJECT_NAME}
+set(EXE_NAME final)
+
+add_executable(${EXE_NAME} ${SRC_LIST})
+target_link_libraries(${EXE_NAME}
     ${CMAKE_THREAD_LIBS_INIT}
     ${LIBEV_LIBRARY}
     ${MAGIC_LIBRARY}
 )
 
-get_property(WEBSERVER_NAME TARGET ${PROJECT_NAME} PROPERTY LOCATION)
-configure_file(${CMAKE_SOURCE_DIR}/final.in ./final @ONLY)
+#get_property(WEBSERVER_NAME TARGET ${PROJECT_NAME} PROPERTY LOCATION)
+#configure_file(${CMAKE_SOURCE_DIR}/final.in ./final @ONLY)

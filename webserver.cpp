@@ -785,7 +785,7 @@ void signal_cb(ev::sig &signal, int /*revents*/)
 // -p <listen-port>
 // -d <directory>
 // -w <work-threads>
-static const char* s_opts = "h:p:d:w:";
+static const char* s_opts = "h:p:d:w:n";
 
 int main(int argc, char **argv) 
 {
@@ -793,6 +793,7 @@ int main(int argc, char **argv)
     string bindip    = "127.0.0.1";
     string directory = "/tmp";
     size_t workers   = 0;
+    bool   daemon    = true;
 
     int opt;
     while ((opt = getopt(argc, argv, s_opts)) != -1)
@@ -811,9 +812,39 @@ int main(int argc, char **argv)
             case 'w':
                 workers = static_cast<size_t>(atoi(optarg));
                 break;
+            case 'n':
+                daemon = false;
+                break;
             default:
                 exit(1);
         }
+    }
+
+    if (daemon)
+    {
+        string name = "/tmp/webserver.log";
+        auto logfd = open(name.c_str(), O_WRONLY|O_CREAT);
+        if (logfd < 0) {
+            perror("can't open log file");
+            exit(1);
+        }
+
+        auto pid = fork();
+
+        if (pid > 0)
+            exit(0);
+
+        auto sid = setsid();
+        if (sid < 0)
+            exit(1);
+
+        close(STDOUT_FILENO);
+        close(STDERR_FILENO);
+
+        dup(logfd);
+        dup(logfd);
+
+        close(STDIN_FILENO);
     }
 
     if (setnofile(999999) < 0)
