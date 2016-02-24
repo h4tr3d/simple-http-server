@@ -425,15 +425,33 @@ private:
         {
             case HTTP_GET:
             {
-                auto fname = m_directory + '/' + m_url;
+                struct http_parser_url url;
+                http_parser_url_init(&url);
+                auto sts = http_parser_parse_url(m_url.c_str(), m_url.size(), false, &url);
+
+                bool notFound = false;
+                string fname;
+
                 using Stat = struct stat;
                 Stat st;
 
-                auto sts = stat(fname.c_str(), &st);
+                if (sts == 0 && url.field_set & (1<<UF_PATH)) {
+                    fname = m_directory + '/' + m_url.substr(url.field_data[UF_PATH].off,
+                                                             url.field_data[UF_PATH].len);
 
-                // Not safe file open: we must check path to omit "out of work directory" reading
+                    cout << "Request file: " << fname << endl;
 
-                if (sts == -1 || !S_ISREG(st.st_mode)) {
+                    auto sts = stat(fname.c_str(), &st);
+
+                    // Not safe file open: we must check path to omit "out of work directory" reading
+
+                    notFound = (sts == -1 || !S_ISREG(st.st_mode));
+
+                } else {
+                    notFound = true;
+                }
+
+                if (notFound) {
                     send(new PtrBuffer<const uint8_t>(&streamNotFound[0], sizeof(streamNotFound) - 1));
                     m_doDestroyAfterWrite = true;
                     return 1;
