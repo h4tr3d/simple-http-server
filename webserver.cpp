@@ -439,13 +439,32 @@ private:
                     fname = m_directory + '/' + m_url.substr(url.field_data[UF_PATH].off,
                                                              url.field_data[UF_PATH].len);
 
-                    cout << "Request file: " << fname << endl;
-
                     auto sts = stat(fname.c_str(), &st);
+                    if (sts == 0) {
 
-                    // Not safe file open: we must check path to omit "out of work directory" reading
+                        auto stmode = st.st_mode;
 
-                    notFound = (sts == -1 || !S_ISREG(st.st_mode));
+                        if (S_ISDIR(stmode)) {
+                            for (auto index : {"index.html", "index.htm"}) {
+                                auto indexname = fname + "/" + index;
+                                if ((sts = stat(indexname.c_str(), &st)) == 0) {
+                                    if (S_ISREG(st.st_mode)) {
+                                        fname = indexname;
+                                        stmode = st.st_mode;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        cout << "Request file: " << fname << endl;
+
+                        // Not safe file open: we must check path to omit "out of work directory" reading
+
+                        notFound = !S_ISREG(stmode);
+                    } else {
+                        notFound = true;
+                    }
 
                 } else {
                     notFound = true;
