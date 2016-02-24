@@ -163,16 +163,13 @@ struct FileReader : AbstractData
     {
         clog << "write file to socket\n";
 #ifdef __linux
-        auto sts = sendfile(fd, this->fd, nullptr, this->count);
-        if (sts == 0) {
+        auto sts = sendfile(fd, this->fd, &_offset, this->count);
+        if (sts >= 0 && static_cast<size_t>(sts) < this->count) {
             // Possible input file EOF
             using Stat = struct stat;
             auto st = Stat();
             if (fstat(this->fd, &st) == 0) {
-                auto off = lseek(fd, 0, SEEK_CUR);
-                if (off != static_cast<off_t>(-1)) {
-                    _eof = off == (st.st_size - 1);
-                }
+                _eof = _offset == st.st_size;
             }
         }
         return sts;
@@ -186,9 +183,10 @@ struct FileReader : AbstractData
         return _eof;
     }
 
-    int    fd    = -1;
-    size_t count = 8192;
-    bool   _eof  = false;
+    int    fd      = -1;
+    size_t count   = 8192;
+    bool   _eof    = false;
+    off_t  _offset = 0;
 };
 
 AbstractData::~AbstractData()
