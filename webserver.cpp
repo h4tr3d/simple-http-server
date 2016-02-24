@@ -901,8 +901,8 @@ int main(int argc, char **argv)
         clog << "===========================[ start server ]===========================\n";
     }
 
-    if (setnofile(999999) < 0)
-        perror("setnofile()");
+    //if (setnofile(999999) < 0)
+    //    perror("setnofile()");
 
     g_workerPool.reset(new WorkerPool(workers));
 
