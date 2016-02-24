@@ -420,14 +420,21 @@ private:
         {
             case HTTP_GET:
             {
+                auto fname = m_directory + '/' + m_url;
+                using Stat = struct stat;
+                Stat st;
+
+                auto sts = stat(fname.c_str(), &st);
 
                 // Not safe file open: we must check path to omit "out of work directory" reading
-                auto fd = open((m_directory + '/' + m_url).c_str(), O_RDONLY);
-                if (fd == -1) {
+
+                if (sts == -1 || !S_ISREG(st.st_mode)) {
                     send(new PtrBuffer<const uint8_t>(&streamNotFound[0], sizeof(streamNotFound) - 1));
                     m_doDestroyAfterWrite = true;
                     return 1;
                 }
+
+                auto fd = open(fname.c_str(), O_RDONLY | O_EXCL);
 
                 //"Transfer-Encoding: chunked\r\n"
                 static uint8_t headers[] = "HTTP/1.1 200 OK\r\n"
