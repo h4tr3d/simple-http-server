@@ -817,7 +817,7 @@ void signal_cb(ev::sig &signal, int /*revents*/)
 // -p <listen-port>
 // -d <directory>
 // -w <work-threads>
-static const char* s_opts = "h:p:d:w:n";
+static const char* s_opts = "h:p:d:w:nl:";
 
 int main(int argc, char **argv) 
 {
@@ -826,6 +826,7 @@ int main(int argc, char **argv)
     string directory = "/tmp";
     size_t workers   = 0;
     bool   daemon    = true;
+    string logfile   = "/home/box/final/webserver.log";
 
     int opt;
     while ((opt = getopt(argc, argv, s_opts)) != -1)
@@ -847,6 +848,9 @@ int main(int argc, char **argv)
             case 'n':
                 daemon = false;
                 break;
+            case 'l':
+                logfile = optarg;
+                break;
             default:
                 exit(1);
         }
@@ -863,8 +867,7 @@ int main(int argc, char **argv)
         if (sid < 0)
             exit(1);
 
-        string name = "/tmp/webserver.log";
-        auto logfd = open(name.c_str(), O_WRONLY|O_CREAT|O_TRUNC, 0644);
+        auto logfd = open(logfile.c_str(), O_WRONLY|O_CREAT|O_APPEND, 0644);
         if (logfd < 0) {
             perror("can't open log file");
             exit(1);
@@ -875,6 +878,8 @@ int main(int argc, char **argv)
         close(STDIN_FILENO);
         if (logfd > 2)
             close(logfd);
+
+        clog << "===========================[ start server ]===========================\n";
     }
 
     if (setnofile(999999) < 0)
